@@ -78,19 +78,23 @@
   
   /* Diff highlighting styles */
   .merge-editor-deleted-line {
-    background-color: rgba(255, 160, 160, 0.4);
+    background-color: rgba(255, 100, 100, 0.3) !important;
+    border-left: 3px solid #ff4040 !important;
   }
   
   .merge-editor-added-line {
-    background-color: rgba(160, 255, 160, 0.4);
+    background-color: rgba(100, 255, 100, 0.3) !important;
+    border-left: 3px solid #40ff40 !important;
   }
   
   .merge-editor-deleted-glyph {
-    background-color: #ff6b6b;
-    border-radius: 2px;
+    background-color: #ff5555 !important;
+    width: 5px !important;
+    margin-left: 5px;
   }
   
   .merge-editor-added-glyph {
-    background-color: #6bff6b;
-    border-radius: 2px;
+    background-color: #55ff55 !important;
+    width: 5px !important;
+    margin-left: 5px;
   }

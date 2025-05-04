@@ -1,1 +1,100 @@
-/* You can add global styles to this file, and also import other style files */
+.merge-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+  
+  .editors-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .editors-container {
+    display: flex;
+    height: 300px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .editor-panel {
+    width: 50%;
+    height: 100%;
+    border-right: 1px solid #ddd;
+  }
+  
+  .result-header {
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .result-panel {
+    height: 300px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .editor-title {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .merge-controls {
+    display: flex;
+    padding: 8px;
+    background-color: #f5f5f5;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .merge-btn {
+    padding: 6px 12px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .merge-btn:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .merge-btn.primary {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+  
+  .merge-btn.primary:hover {
+    background-color: #0069d9;
+  }
+  
+  .merge-btn-icon {
+    display: inline-block;
+    margin-right: 4px;
+  }
+  
+  /* Diff highlighting styles */
+  .merge-editor-deleted-line {
+    background-color: rgba(255, 100, 100, 0.3) !important;
+    border-left: 3px solid #ff4040 !important;
+  }
+  
+  .merge-editor-added-line {
+    background-color: rgba(100, 255, 100, 0.3) !important;
+    border-left: 3px solid #40ff40 !important;
+  }
+  
+  .merge-editor-deleted-glyph {
+    background-color: #ff5555 !important;
+    width: 5px !important;
+    margin-left: 5px;
+  }
+  
+  .merge-editor-added-glyph {
+    background-color: #55ff55 !important;
+    width: 5px !important;
+    margin-left: 5px;
+  }
