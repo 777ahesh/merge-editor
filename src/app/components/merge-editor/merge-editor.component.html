@@ -1,0 +1,29 @@
+<div class="merge-editor-container">
+  <div class="editors-header">
+    <div class="editor-title">Original</div>
+    <div class="editor-title">Modified</div>
+  </div>
+  
+  <div class="editors-container">
+    <div #originalContainer class="editor-panel"></div>
+    <div #modifiedContainer class="editor-panel"></div>
+  </div>
+  
+  <div class="merge-controls">
+    <button (click)="previousDifference()" class="merge-btn">
+      <span class="merge-btn-icon">⬆</span> Previous Difference
+    </button>
+    <button (click)="nextDifference()" class="merge-btn">
+      <span class="merge-btn-icon">⬇</span> Next Difference
+    </button>
+    <button (click)="selectCurrent()" class="merge-btn">Accept Current</button>
+    <button (click)="selectIncoming()" class="merge-btn">Accept Incoming</button>
+    <button (click)="saveResult()" class="merge-btn primary">Save Result</button>
+  </div>
+  
+  <div class="result-header">
+    <div class="editor-title">Resolved</div>
+  </div>
+  
+  <div #resultContainer class="result-panel"></div>
+</div>

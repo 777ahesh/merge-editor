@@ -1,0 +1,125 @@
+.merge-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+  
+  .editors-header, .result-header {
+    display: flex;
+    background-color: #f3f3f3;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 5px 0;
+  }
+  
+  .editors-header {
+    justify-content: space-around;
+  }
+  
+  .editor-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    padding: 5px 10px;
+  }
+  
+  .editors-container {
+    display: flex;
+    height: 300px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .editor-panel {
+    width: 50%;
+    height: 100%;
+    border-right: 1px solid #e0e0e0;
+  }
+  
+  .result-panel {
+    height: 300px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .merge-controls {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e0e0e0;
+    gap: 10px;
+  }
+  
+  .merge-btn {
+    padding: 8px 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    background-color: #ffffff;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+  
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  
+    &.primary {
+      background-color: #0078d7;
+      color: white;
+      border-color: #0078d7;
+  
+      &:hover {
+        background-color: #006cc1;
+      }
+    }
+  }
+  
+  .merge-btn-icon {
+    margin-right: 5px;
+    font-size: 14px;
+  }
+  
+  /* Custom decorations for the diff editor */
+  :host ::ng-deep {
+    .merge-editor-deleted-line {
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+  
+    .merge-editor-added-line {
+      background-color: rgba(0, 255, 0, 0.1);
+    }
+  
+    .merge-editor-deleted-glyph {
+      background-color: rgba(255, 0, 0, 0.3);
+      width: 5px !important;
+      margin-left: 3px;
+      
+      &::before {
+        content: "-";
+        color: darkred;
+        position: absolute;
+        left: 2px;
+      }
+    }
+  
+    .merge-editor-added-glyph {
+      background-color: rgba(0, 255, 0, 0.3);
+      width: 5px !important;
+      margin-left: 3px;
+  
+      &::before {
+        content: "+";
+        color: darkgreen;
+        position: absolute;
+        left: 2px;
+      }
+    }
+  
+    /* Monaco editor customizations */
+    .monaco-editor .line-numbers {
+      color: #636363;
+    }
+  }

@@ -1,0 +1,24 @@
+.app-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+  }
+  
+  p {
+    margin: 0 0 20px 0;
+    color: #666;
+  }
+  
+  .merge-editor {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
