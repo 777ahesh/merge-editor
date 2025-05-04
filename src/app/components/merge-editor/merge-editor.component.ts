@@ -16,7 +16,10 @@ export class MergeEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private originalEditor: any;
   private modifiedEditor: any;
   private resultEditor: any;
-  private diffNavigator: any;
+  private diffEditor: any;
+  private currentDiffIndex = 0;
+  private diffDecorations: string[] = [];
+  private differences: any[] = [];
   
   // Sample content for demo purposes
   private originalContent = `function helloWorld() {
@@ -80,6 +83,9 @@ function fetchData(endpoint) {
     }
     if (this.resultEditor) {
       this.resultEditor.dispose();
+    }
+    if (this.diffEditor) {
+      this.diffEditor.dispose();
     }
   }
 
@@ -162,7 +168,7 @@ function fetchData(endpoint) {
       lineNumbersMinChars: 3
     });
 
-    // Setup diff editor
+    // Setup diff view
     this.setupDiffView();
 
     // Handle window resize
@@ -176,85 +182,115 @@ function fetchData(endpoint) {
   }
 
   private setupDiffView(): void {
-    // Create diff editor model
-    const originalModel = this.originalEditor.getModel();
-    const modifiedModel = this.modifiedEditor.getModel();
+    // Create invisible diff editor to compute diffs
+    const diffContainer = document.createElement('div');
+    diffContainer.style.height = '0';
+    diffContainer.style.width = '0';
+    diffContainer.style.overflow = 'hidden';
+    document.body.appendChild(diffContainer);
     
-    // Compute line diffs
-    const diffComputer = new monaco.editor.DiffNavigator(
-      this.originalEditor,
-      this.modifiedEditor,
-      {
-        followsCaret: true,
-        ignoreCharChanges: false
-      }
-    );
-    
-    // Set up the diff navigator
-    this.diffNavigator = diffComputer;
-    
-    // Compute the diff and add decorations
-    const diffs = monaco.editor.createDiffEditor(document.createElement('div'), {
-      originalEditor: this.originalEditor,
-      modifiedEditor: this.modifiedEditor,
-      renderSideBySide: false
+    this.diffEditor = monaco.editor.createDiffEditor(diffContainer, {
+      renderSideBySide: false,
+      readOnly: true,
+      ignoreTrimWhitespace: false
     });
-    
-    this.decorateChanges(originalModel, modifiedModel);
+
+    // Set models for diff editor
+    this.diffEditor.setModel({
+      original: this.originalEditor.getModel(),
+      modified: this.modifiedEditor.getModel()
+    });
+
+    // Compute differences
+    setTimeout(() => {
+      this.computeDifferences();
+      this.decorateChanges();
+      
+      // Clean up the temporary container
+      document.body.removeChild(diffContainer);
+    }, 500);
   }
 
-  private decorateChanges(originalModel: any, modifiedModel: any): void {
-    const diff = monaco.editor.createDiffEditor(document.createElement('div'));
-    diff.setModel({
-      original: originalModel,
-      modified: modifiedModel
-    });
+  private computeDifferences(): void {
+    const diffModel = this.diffEditor.getModel();
+    const originalLineCount = diffModel.original.getLineCount();
+    const modifiedLineCount = diffModel.modified.getLineCount();
+    const lineCount = Math.max(originalLineCount, modifiedLineCount);
     
-    setTimeout(() => {
-      const diffModel = diff.getModel();
-      const changes = diffModel.original.getLinesContent().map((line: string, i: number) => {
-        const modifiedLine = i < diffModel.modified.getLinesContent().length 
-          ? diffModel.modified.getLinesContent()[i] 
-          : '';
-        
-        return {
-          originalLine: line,
-          modifiedLine: modifiedLine,
-          lineNumber: i + 1,
-          changed: line !== modifiedLine
-        };
-      });
+    this.differences = [];
+    
+    for (let i = 1; i <= lineCount; i++) {
+      const originalLine = i <= originalLineCount ? diffModel.original.getLineContent(i) : '';
+      const modifiedLine = i <= modifiedLineCount ? diffModel.modified.getLineContent(i) : '';
       
-      // Add decorations for the original editor
-      const originalDecorations = changes
-        .filter((change: { changed: any; }) => change.changed)
-        .map((change: { lineNumber: any; }) => ({
-          range: new monaco.Range(change.lineNumber, 1, change.lineNumber, 1),
-          options: {
-            isWholeLine: true,
-            linesDecorationsClassName: 'merge-editor-deleted-line',
-            className: 'merge-editor-deleted-line',
-            glyphMarginClassName: 'merge-editor-deleted-glyph'
-          }
-        }));
-      
-      this.originalEditor.deltaDecorations([], originalDecorations);
-      
-      // Add decorations for the modified editor
-      const modifiedDecorations = changes
-        .filter((change: { changed: any; }) => change.changed)
-        .map((change: { lineNumber: any; }) => ({
-          range: new monaco.Range(change.lineNumber, 1, change.lineNumber, 1),
-          options: {
-            isWholeLine: true,
-            linesDecorationsClassName: 'merge-editor-added-line',
-            className: 'merge-editor-added-line',
-            glyphMarginClassName: 'merge-editor-added-glyph'
-          }
-        }));
-      
-      this.modifiedEditor.deltaDecorations([], modifiedDecorations);
-    }, 500);
+      if (originalLine !== modifiedLine) {
+        this.differences.push({
+          lineNumber: i,
+          originalText: originalLine,
+          modifiedText: modifiedLine
+        });
+      }
+    }
+  }
+
+  private decorateChanges(): void {
+    // Clear existing decorations
+    if (this.diffDecorations.length > 0) {
+      this.originalEditor.deltaDecorations(this.diffDecorations, []);
+      this.modifiedEditor.deltaDecorations(this.diffDecorations, []);
+    }
+    
+    // Add decorations for the original editor
+    const originalDecorations = this.differences.map(diff => ({
+      range: new monaco.Range(diff.lineNumber, 1, diff.lineNumber, 1),
+      options: {
+        isWholeLine: true,
+        linesDecorationsClassName: 'merge-editor-deleted-line',
+        className: 'merge-editor-deleted-line',
+        glyphMarginClassName: 'merge-editor-deleted-glyph'
+      }
+    }));
+    
+    this.originalEditor.deltaDecorations([], originalDecorations);
+    
+    // Add decorations for the modified editor
+    const modifiedDecorations = this.differences.map(diff => ({
+      range: new monaco.Range(diff.lineNumber, 1, diff.lineNumber, 1),
+      options: {
+        isWholeLine: true,
+        linesDecorationsClassName: 'merge-editor-added-line',
+        className: 'merge-editor-added-line',
+        glyphMarginClassName: 'merge-editor-added-glyph'
+      }
+    }));
+    
+    this.modifiedEditor.deltaDecorations([], modifiedDecorations);
+    
+    // Navigate to first difference
+    if (this.differences.length > 0) {
+      this.navigateToDiff(0);
+    }
+  }
+  
+  private navigateToDiff(index: number): void {
+    if (this.differences.length === 0) return;
+    
+    // Ensure index is within bounds
+    this.currentDiffIndex = Math.max(0, Math.min(index, this.differences.length - 1));
+    
+    const diff = this.differences[this.currentDiffIndex];
+    
+    // Scroll both editors to the line
+    this.originalEditor.revealLineInCenter(diff.lineNumber);
+    this.modifiedEditor.revealLineInCenter(diff.lineNumber);
+    this.resultEditor.revealLineInCenter(diff.lineNumber);
+    
+    // Position cursor in result editor
+    this.resultEditor.setPosition({
+      lineNumber: diff.lineNumber,
+      column: 1
+    });
+    this.resultEditor.focus();
   }
 
   // Actions that can be called from the UI
@@ -306,15 +342,17 @@ function fetchData(endpoint) {
 
   // Navigation methods
   public nextDifference(): void {
-    if (this.diffNavigator) {
-      this.diffNavigator.next();
-    }
+    if (this.differences.length === 0) return;
+    
+    const nextIndex = (this.currentDiffIndex + 1) % this.differences.length;
+    this.navigateToDiff(nextIndex);
   }
   
   public previousDifference(): void {
-    if (this.diffNavigator) {
-      this.diffNavigator.previous();
-    }
+    if (this.differences.length === 0) return;
+    
+    const prevIndex = (this.currentDiffIndex - 1 + this.differences.length) % this.differences.length;
+    this.navigateToDiff(prevIndex);
   }
 
   // Save the merged result
