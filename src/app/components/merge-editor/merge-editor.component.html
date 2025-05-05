@@ -16,8 +16,12 @@
     <button (click)="nextDifference()" class="merge-btn">
       <span class="merge-btn-icon">⬇</span> Next Difference
     </button>
-    <button (click)="selectCurrent()" class="merge-btn">Accept Current</button>
-    <button (click)="selectIncoming()" class="merge-btn">Accept Incoming</button>
+    <div class="merge-actions">
+      <button (click)="selectOriginalBlock()" class="merge-btn">Accept Original Block</button>
+      <button (click)="selectModifiedBlock()" class="merge-btn">Accept Modified Block</button>
+      <button (click)="selectCurrentCharChange()" class="merge-btn">Accept Original Change</button>
+      <button (click)="selectIncomingCharChange()" class="merge-btn">Accept Modified Change</button>
+    </div>
     <button (click)="saveResult()" class="merge-btn primary">Save Result</button>
   </div>
   

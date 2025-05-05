@@ -1,100 +1,139 @@
 .merge-editor-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-  }
-  
-  .editors-header {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .editors-container {
-    display: flex;
-    height: 300px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .editor-panel {
-    width: 50%;
-    height: 100%;
-    border-right: 1px solid #ddd;
-  }
-  
-  .result-header {
-    padding: 8px;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .result-panel {
-    height: 300px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .editor-title {
-    font-weight: bold;
-    font-size: 14px;
-  }
-  
-  .merge-controls {
-    display: flex;
-    padding: 8px;
-    background-color: #f5f5f5;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  
-  .merge-btn {
-    padding: 6px 12px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .merge-btn:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .merge-btn.primary {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-  }
-  
-  .merge-btn.primary:hover {
-    background-color: #0069d9;
-  }
-  
-  .merge-btn-icon {
-    display: inline-block;
-    margin-right: 4px;
-  }
-  
-  /* Diff highlighting styles */
-  .merge-editor-deleted-line {
-    background-color: rgba(255, 100, 100, 0.3) !important;
-    border-left: 3px solid #ff4040 !important;
-  }
-  
-  .merge-editor-added-line {
-    background-color: rgba(100, 255, 100, 0.3) !important;
-    border-left: 3px solid #40ff40 !important;
-  }
-  
-  .merge-editor-deleted-glyph {
-    background-color: #ff5555 !important;
-    width: 5px !important;
-    margin-left: 5px;
-  }
-  
-  .merge-editor-added-glyph {
-    background-color: #55ff55 !important;
-    width: 5px !important;
-    margin-left: 5px;
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.editors-header {
+  display: flex;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.editor-title {
+  flex: 1;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 14px;
+  text-align: center;
+  color: #333;
+}
+
+.editors-container {
+  display: flex;
+  flex: 1;
+  min-height: 300px;
+  border-bottom: 1px solid #ddd;
+}
+
+.editor-panel {
+  flex: 1;
+  height: 100%;
+  border-right: 1px solid #eee;
+}
+
+.result-header {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.result-panel {
+  height: 300px;
+  width: 100%;
+}
+
+.merge-controls {
+  display: flex;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #ddd;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.merge-actions {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  justify-content: center;
+}
+
+.merge-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.merge-btn:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+}
+
+.merge-btn.primary {
+  background-color: #0078d4;
+  color: white;
+  border-color: #0078d4;
+}
+
+.merge-btn.primary:hover {
+  background-color: #106ebe;
+  border-color: #106ebe;
+}
+
+.merge-btn-icon {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+/* Character-level diff styling */
+/* Original editor - light red background for changed blocks */
+.originalContainer .merge-editor-changed-line {
+  background-color: rgba(255, 200, 200, 0.2);
+}
+
+.originalContainer .merge-editor-changed-line-indicator {
+  width: 3px !important;
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+/* Modified editor - light green background for changed blocks */
+.modifiedContainer .merge-editor-changed-line {
+  background-color: rgba(200, 255, 200, 0.2);
+}
+
+.modifiedContainer .merge-editor-changed-line-indicator {
+  width: 3px !important;
+  background-color: rgba(0, 255, 0, 0.3);
+}
+
+.merge-editor-deleted-text {
+  background-color: rgba(255, 0, 0, 0.2) !important;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 0, 0, 0.5);
+}
+
+.merge-editor-added-text {
+  background-color: rgba(0, 255, 0, 0.2) !important;
+  border-bottom: 1px dotted rgba(0, 128, 0, 0.5);
+}
+
+/* For line-level diff indicators in glyph margin */
+.merge-editor-deleted-glyph {
+  background-color: rgba(255, 0, 0, 0.3);
+  width: 5px !important;
+}
+
+.merge-editor-added-glyph {
+  background-color: rgba(0, 255, 0, 0.3);
+  width: 5px !important;
+}
