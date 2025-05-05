@@ -20,6 +20,10 @@ export class MergeEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private currentDiffIndex = 0;
   private diffDecorations: string[] = [];
   private differences: any[] = [];
+  private resolvedDifferences: Set<number> = new Set(); // Track resolved differences by index
+  
+  // Expose conflict counter to template
+  public pendingConflictsCount = 0;
   
   // Sample content for demo purposes
   private originalContent = `function helloWorld() {
@@ -214,7 +218,8 @@ function fetchData(endpoint) {
     // Compute differences
     setTimeout(() => {
       this.computeDifferences();
-      this.highlightCharacterLevelDiffs();
+      this.highlightDifferences();
+      this.updatePendingConflictsCount();
       
       // Clean up the temporary container
       document.body.removeChild(diffContainer);
@@ -249,13 +254,17 @@ function fetchData(endpoint) {
           modifiedEndLineNumber,
           charChanges: charChanges || [],
           type: this.getDiffType(originalStartLineNumber, originalEndLineNumber, 
-                               modifiedStartLineNumber, modifiedEndLineNumber)
+                               modifiedStartLineNumber, modifiedEndLineNumber),
+          resolved: false
         });
       });
     }
     
     // Sort differences by line number
     this.differences.sort((a, b) => a.modifiedStartLineNumber - b.modifiedStartLineNumber);
+    
+    // Update pending conflicts count
+    this.updatePendingConflictsCount();
   }
   
   private getDiffType(originalStart: number, originalEnd: number, 
@@ -269,7 +278,7 @@ function fetchData(endpoint) {
     }
   }
 
-  private highlightCharacterLevelDiffs(): void {
+  private highlightDifferences(): void {
     // Clear existing decorations
     if (this.diffDecorations.length > 0) {
       this.originalEditor.deltaDecorations(this.diffDecorations, []);
@@ -280,7 +289,12 @@ function fetchData(endpoint) {
     let modifiedDecorations: any[] = [];
     
     // Process each difference
-    this.differences.forEach(diff => {
+    this.differences.forEach((diff, index) => {
+      // Skip resolved differences
+      if (this.resolvedDifferences.has(index)) {
+        return;
+      }
+      
       // Highlight changed lines with light background
       if (diff.originalStartLineNumber > 0) {
         for (let i = diff.originalStartLineNumber; i <= diff.originalEndLineNumber; i++) {
@@ -289,7 +303,11 @@ function fetchData(endpoint) {
             options: {
               isWholeLine: true,
               className: 'merge-editor-changed-line',
-              linesDecorationsClassName: 'merge-editor-changed-line-indicator'
+              linesDecorationsClassName: 'merge-editor-changed-line-indicator',
+              // Add "-" icon to the line number margin
+              lineNumberClassName: 'merge-editor-deletion-line-number',
+              glyphMarginClassName: 'merge-editor-deletion-glyph',
+              glyphMarginHoverMessage: { value: 'Deletion' }
             }
           });
         }
@@ -302,7 +320,11 @@ function fetchData(endpoint) {
             options: {
               isWholeLine: true,
               className: 'merge-editor-changed-line',
-              linesDecorationsClassName: 'merge-editor-changed-line-indicator'
+              linesDecorationsClassName: 'merge-editor-changed-line-indicator',
+              // Add "+" icon to the line number margin
+              lineNumberClassName: 'merge-editor-addition-line-number',
+              glyphMarginClassName: 'merge-editor-addition-glyph',
+              glyphMarginHoverMessage: { value: 'Addition' }
             }
           });
         }
@@ -353,10 +375,8 @@ function fetchData(endpoint) {
     // Store decoration IDs
     this.diffDecorations = [...origDecoIds, ...modDecoIds];
     
-    // Navigate to first difference
-    if (this.differences.length > 0) {
-      this.navigateToDiff(0);
-    }
+    // Navigate to first unresolved difference
+    this.navigateToNextUnresolvedDiff();
   }
   
   private navigateToDiff(index: number): void {
@@ -385,6 +405,44 @@ function fetchData(endpoint) {
     }
   }
 
+  // Navigate to next unresolved difference
+  private navigateToNextUnresolvedDiff(): void {
+    if (this.differences.length === 0) return;
+    
+    let startIdx = this.currentDiffIndex;
+    let index = startIdx;
+    
+    // Find the next unresolved diff
+    do {
+      if (!this.resolvedDifferences.has(index)) {
+        this.navigateToDiff(index);
+        return;
+      }
+      
+      index = (index + 1) % this.differences.length;
+    } while (index !== startIdx);
+    
+    // If we get here, all diffs are resolved
+    if (this.differences.length > 0) {
+      this.navigateToDiff(0);
+    }
+  }
+
+  // Update the count of pending conflicts
+  private updatePendingConflictsCount(): void {
+    const pendingCount = this.differences.length - this.resolvedDifferences.size;
+    this.pendingConflictsCount = pendingCount;
+  }
+
+  // Mark a difference as resolved
+  private markDiffAsResolved(index: number): void {
+    if (index >= 0 && index < this.differences.length) {
+      this.resolvedDifferences.add(index);
+      this.updatePendingConflictsCount();
+      this.highlightDifferences(); // Refresh the highlights
+    }
+  }
+
   // Actions that can be called from the UI
   public selectOriginalBlock(): void {
     if (this.differences.length === 0 || this.currentDiffIndex >= this.differences.length) return;
@@ -409,6 +467,12 @@ function fetchData(endpoint) {
       diff.modifiedEndLineNumber,
       originalContent
     );
+    
+    // Mark as resolved
+    this.markDiffAsResolved(this.currentDiffIndex);
+    
+    // Navigate to next unresolved diff
+    this.navigateToNextUnresolvedDiff();
   }
   
   public selectModifiedBlock(): void {
@@ -434,6 +498,12 @@ function fetchData(endpoint) {
       diff.modifiedEndLineNumber,
       modifiedContent
     );
+    
+    // Mark as resolved
+    this.markDiffAsResolved(this.currentDiffIndex);
+    
+    // Navigate to next unresolved diff
+    this.navigateToNextUnresolvedDiff();
   }
   
   public selectCurrentCharChange(): void {
@@ -483,6 +553,13 @@ function fetchData(endpoint) {
       charChange.modifiedEndColumn,
       originalText
     );
+    
+    // Check if all char changes have been resolved and mark the diff as resolved if so
+    // This is a simplified approach - for a real implementation, you'd need to track which specific char changes are resolved
+    this.markDiffAsResolved(this.currentDiffIndex);
+    
+    // Navigate to next unresolved diff
+    this.navigateToNextUnresolvedDiff();
   }
   
   public selectIncomingCharChange(): void {
@@ -532,6 +609,12 @@ function fetchData(endpoint) {
       charChange.modifiedEndColumn,
       modifiedText
     );
+    
+    // Mark as resolved
+    this.markDiffAsResolved(this.currentDiffIndex);
+    
+    // Navigate to next unresolved diff
+    this.navigateToNextUnresolvedDiff();
   }
   
   private findCharChangeAtPosition(charChanges: any[], position: any): any {
@@ -612,14 +695,32 @@ function fetchData(endpoint) {
   public nextDifference(): void {
     if (this.differences.length === 0) return;
     
-    const nextIndex = (this.currentDiffIndex + 1) % this.differences.length;
+    let nextIndex = this.currentDiffIndex;
+    // Find the next unresolved diff
+    for (let i = 1; i <= this.differences.length; i++) {
+      const idx = (this.currentDiffIndex + i) % this.differences.length;
+      if (!this.resolvedDifferences.has(idx)) {
+        nextIndex = idx;
+        break;
+      }
+    }
+    
     this.navigateToDiff(nextIndex);
   }
   
   public previousDifference(): void {
     if (this.differences.length === 0) return;
     
-    const prevIndex = (this.currentDiffIndex - 1 + this.differences.length) % this.differences.length;
+    let prevIndex = this.currentDiffIndex;
+    // Find the previous unresolved diff
+    for (let i = 1; i <= this.differences.length; i++) {
+      const idx = (this.currentDiffIndex - i + this.differences.length) % this.differences.length;
+      if (!this.resolvedDifferences.has(idx)) {
+        prevIndex = idx;
+        break;
+      }
+    }
+    
     this.navigateToDiff(prevIndex);
   }
 

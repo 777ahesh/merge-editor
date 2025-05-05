@@ -10,6 +10,11 @@
   </div>
   
   <div class="merge-controls">
+    <div class="conflict-counter">
+      <span class="conflict-icon">⚠️</span>
+      <span class="conflict-count">{{ pendingConflictsCount }} pending conflicts</span>
+    </div>
+    
     <button (click)="previousDifference()" class="merge-btn">
       <span class="merge-btn-icon">⬆</span> Previous Difference
     </button>
