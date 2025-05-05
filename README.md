@@ -16,3 +16,6 @@ The merge editor is designed as a non-standalone Angular component that uses Mon
 + Navigation between differences
 + Accept Current/Incoming buttons to choose changes
 + Merged result preview and saving
+
+## Project
+![image](https://github.com/user-attachments/assets/350fd249-2f55-4764-9aae-d54d240f5869)
