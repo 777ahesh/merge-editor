@@ -24,8 +24,10 @@
     <div class="merge-actions">
       <button (click)="selectOriginalBlock()" class="merge-btn">Accept Original Block</button>
       <button (click)="selectModifiedBlock()" class="merge-btn">Accept Modified Block</button>
-      <button (click)="selectCurrentCharChange()" class="merge-btn">Accept Original Change</button>
-      <button (click)="selectIncomingCharChange()" class="merge-btn">Accept Modified Change</button>
+      <!-- <button (click)="selectCurrentCharChange()" class="merge-btn">Accept Original Change</button>
+      <button (click)="selectIncomingCharChange()" class="merge-btn">Accept Modified Change</button> -->
+      <button (click)="acceptAllOriginal()" class="merge-btn">Accept All Original</button>
+      <button (click)="acceptAllModified()" class="merge-btn">Accept All Modified</button>
     </div>
     <button (click)="saveResult()" class="merge-btn primary">Save Result</button>
   </div>
