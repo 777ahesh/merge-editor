@@ -5,6 +5,8 @@ import {
   ViewChild,
   AfterViewInit,
   OnDestroy,
+  HostListener,
+  Renderer2,
 } from '@angular/core';
 
 // Declare monaco for TypeScript
@@ -19,6 +21,8 @@ export class MergeEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('originalContainer') originalContainer!: ElementRef;
   @ViewChild('modifiedContainer') modifiedContainer!: ElementRef;
   @ViewChild('resultContainer') resultContainer!: ElementRef;
+  @ViewChild('horizontalResizeHandle') horizontalResizeHandle!: ElementRef;
+  @ViewChild('verticalResizeHandle') verticalResizeHandle!: ElementRef;
 
   private originalEditor: any;
   private modifiedEditor: any;
@@ -31,6 +35,17 @@ export class MergeEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Expose conflict counter to template
   public pendingConflictsCount = 0;
+
+  // New properties for resizing
+  private isHorizontalResizing = false;
+  private isVerticalResizing = false;
+  private initialX = 0;
+  private initialY = 0;
+  private initialLeftWidth = 0;
+  private initialRightWidth = 0;
+  private initialTopHeight = 0;
+  private initialBottomHeight = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
   // Sample content for demo purposes
   private originalContent = `function helloWorld() {
@@ -69,7 +84,7 @@ function fetchData(endpoint) {
   private monacoLoaded = false;
   private monacoLoadPromise: Promise<void> | null = null;
 
-  constructor() {}
+  constructor(private renderer: Renderer2) {}
 
   ngOnInit(): void {
     this.loadMonaco();
@@ -78,9 +93,11 @@ function fetchData(endpoint) {
   ngAfterViewInit(): void {
     if (this.monacoLoaded) {
       this.initializeEditors();
+      this.initializeResizeHandlers();
     } else {
       this.monacoLoadPromise?.then(() => {
         this.initializeEditors();
+        this.initializeResizeHandlers();
       });
     }
   }
@@ -98,6 +115,14 @@ function fetchData(endpoint) {
     if (this.diffEditor) {
       this.diffEditor.dispose();
     }
+    // Remove resize observers
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+
+    // Remove event listeners
+    window.removeEventListener('mousemove', this.handleMouseMove);
+    window.removeEventListener('mouseup', this.handleMouseUp);
   }
 
   private loadMonaco(): void {
@@ -952,5 +977,174 @@ function fetchData(endpoint) {
     const result = this.resultEditor.getValue();
     console.log('Saving merged result:', result);
     // Here you would typically send this to your backend or perform other actions
+  }
+
+  // Resize Handlers
+  private initializeResizeHandlers(): void {
+    // Setup horizontal resize between original and modified editors
+    this.renderer.listen(
+      this.horizontalResizeHandle.nativeElement,
+      'mousedown',
+      (e) => {
+        this.isHorizontalResizing = true;
+        this.initialX = e.clientX;
+
+        const editors = this.horizontalResizeHandle.nativeElement.parentElement;
+        const originalPanel = editors.querySelector(
+          '.editor-panel:first-child'
+        ) as HTMLElement;
+        const modifiedPanel = editors.querySelector(
+          '.editor-panel:last-child'
+        ) as HTMLElement;
+
+        this.initialLeftWidth = originalPanel.getBoundingClientRect().width;
+        this.initialRightWidth = modifiedPanel.getBoundingClientRect().width;
+
+        // Prevent text selection during resize
+        e.preventDefault();
+        this.renderer.addClass(
+          this.horizontalResizeHandle.nativeElement,
+          'dragging'
+        );
+      }
+    );
+
+    // Setup vertical resize between editors and result
+    this.renderer.listen(
+      this.verticalResizeHandle.nativeElement,
+      'mousedown',
+      (e) => {
+        this.isVerticalResizing = true;
+        this.initialY = e.clientY;
+
+        const container = this.verticalResizeHandle.nativeElement.parentElement;
+        const editorsContainer = container.querySelector(
+          '.editors-container'
+        ) as HTMLElement;
+        const resultPanel = container.querySelector(
+          '.result-panel'
+        ) as HTMLElement;
+
+        this.initialTopHeight = editorsContainer.getBoundingClientRect().height;
+        this.initialBottomHeight = resultPanel.getBoundingClientRect().height;
+
+        // Prevent text selection during resize
+        e.preventDefault();
+        this.renderer.addClass(
+          this.verticalResizeHandle.nativeElement,
+          'dragging'
+        );
+      }
+    );
+
+    // Global mouse move and up handlers
+    window.addEventListener('mousemove', this.handleMouseMove);
+    window.addEventListener('mouseup', this.handleMouseUp);
+
+    // Setup resize observer to update editor layouts when container sizes change
+    this.setupResizeObserver();
+  }
+
+  // Use arrow function to preserve 'this' context
+  private handleMouseMove = (e: MouseEvent) => {
+    if (this.isHorizontalResizing) {
+      const dx = e.clientX - this.initialX;
+      const container = this.horizontalResizeHandle.nativeElement.parentElement;
+      const containerWidth = container.getBoundingClientRect().width;
+      const originalPanel = container.querySelector(
+        '.editor-panel:first-child'
+      ) as HTMLElement;
+      const modifiedPanel = container.querySelector(
+        '.editor-panel:last-child'
+      ) as HTMLElement;
+
+      // Calculate new widths (percentages)
+      const newLeftWidth =
+        ((this.initialLeftWidth + dx) / containerWidth) * 100;
+      const newRightWidth =
+        ((this.initialRightWidth - dx) / containerWidth) * 100;
+
+      // Apply min widths (20%)
+      if (newLeftWidth > 20 && newRightWidth > 20) {
+        this.renderer.setStyle(originalPanel, 'flex', `0 0 ${newLeftWidth}%`);
+        this.renderer.setStyle(modifiedPanel, 'flex', `0 0 ${newRightWidth}%`);
+        this.refreshEditorLayouts();
+      }
+    }
+
+    if (this.isVerticalResizing) {
+      const dy = e.clientY - this.initialY;
+      const container = this.verticalResizeHandle.nativeElement.parentElement;
+      const editorsContainer = container.querySelector(
+        '.editors-container'
+      ) as HTMLElement;
+      const resultPanel = container.querySelector(
+        '.result-panel'
+      ) as HTMLElement;
+
+      // Calculate new heights
+      const newTopHeight = this.initialTopHeight + dy;
+      const newBottomHeight = this.initialBottomHeight - dy;
+
+      // Apply min heights (100px)
+      if (newTopHeight > 100 && newBottomHeight > 100) {
+        this.renderer.setStyle(editorsContainer, 'height', `${newTopHeight}px`);
+        this.renderer.setStyle(resultPanel, 'height', `${newBottomHeight}px`);
+        this.refreshEditorLayouts();
+      }
+    }
+  };
+
+  // Use arrow function to preserve 'this' context
+  private handleMouseUp = () => {
+    if (this.isHorizontalResizing) {
+      this.isHorizontalResizing = false;
+      this.renderer.removeClass(
+        this.horizontalResizeHandle.nativeElement,
+        'dragging'
+      );
+    }
+
+    if (this.isVerticalResizing) {
+      this.isVerticalResizing = false;
+      this.renderer.removeClass(
+        this.verticalResizeHandle.nativeElement,
+        'dragging'
+      );
+    }
+
+    this.refreshEditorLayouts();
+  };
+
+  private setupResizeObserver(): void {
+    if ('ResizeObserver' in window) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.refreshEditorLayouts();
+      });
+
+      // Observe the container elements
+      this.resizeObserver.observe(this.originalContainer.nativeElement);
+      this.resizeObserver.observe(this.modifiedContainer.nativeElement);
+      this.resizeObserver.observe(this.resultContainer.nativeElement);
+    }
+  }
+
+  private refreshEditorLayouts(): void {
+    if (this.originalEditor) {
+      this.originalEditor.layout();
+    }
+
+    if (this.modifiedEditor) {
+      this.modifiedEditor.layout();
+    }
+
+    if (this.resultEditor) {
+      this.resultEditor.layout();
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.refreshEditorLayouts();
   }
 }
