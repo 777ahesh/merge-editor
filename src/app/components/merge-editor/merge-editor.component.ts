@@ -8,7 +8,6 @@ import {
   HostListener,
   Renderer2,
 } from '@angular/core';
-
 // Declare monaco for TypeScript
 declare const monaco: any;
 
@@ -46,6 +45,12 @@ export class MergeEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private initialTopHeight = 0;
   private initialBottomHeight = 0;
   private resizeObserver: ResizeObserver | null = null;
+  public currentTheme = 'vs'; // Default light theme
+  public supportedThemes = [
+    { id: 'vs', name: 'Light' },
+    { id: 'vs-dark', name: 'Dark' },
+    { id: 'hc-black', name: 'High Contrast' },
+  ];
 
   // Sample content for demo purposes
   private originalContent = `function helloWorld() {
@@ -83,6 +88,46 @@ function fetchData(endpoint) {
   private resultContent = '';
   private monacoLoaded = false;
   private monacoLoadPromise: Promise<void> | null = null;
+
+  // New properties for language selection and code pasting
+  public currentLanguage = 'javascript';
+  public supportedLanguages = [
+    { id: 'javascript', name: 'JavaScript' },
+    { id: 'plaintext', name: 'Plain Text' },
+    { id: 'typescript', name: 'TypeScript' },
+    { id: 'html', name: 'HTML' },
+    { id: 'css', name: 'CSS' },
+    { id: 'json', name: 'JSON' },
+    { id: 'xml', name: 'XML' },
+    { id: 'markdown', name: 'Markdown' },
+    { id: 'python', name: 'Python' },
+    { id: 'java', name: 'Java' },
+    { id: 'csharp', name: 'C#' },
+    { id: 'cpp', name: 'C++' },
+    { id: 'php', name: 'PHP' },
+    { id: 'ruby', name: 'Ruby' },
+    { id: 'go', name: 'Go' },
+    { id: 'sql', name: 'SQL' },
+  ];
+
+  // For code paste dialog
+  public showPasteDialog = false;
+  public pasteTarget: 'original' | 'modified' = 'original';
+  public pasteContent = '';
+
+  // Add this property to store previous content
+  private previousResultContent: string = '';
+
+  // Add this method to revert changes
+  public revertLastChange(): void {
+    if (this.previousResultContent) {
+      this.resultEditor.setValue(this.previousResultContent);
+      this.resultContent = this.previousResultContent;
+
+      // Refresh diff view to update conflicts
+      this.setupDiffView();
+    }
+  }
 
   constructor(private renderer: Renderer2) {}
 
@@ -169,9 +214,9 @@ function fetchData(endpoint) {
       this.originalContainer.nativeElement,
       {
         value: this.originalContent,
-        language: 'javascript',
-        theme: 'vs',
-        readOnly: true,
+        language: this.currentLanguage, // Use the current language
+        theme: this.currentTheme,
+        readOnly: true, // Allow editing for direct paste
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         lineNumbers: 'on',
@@ -187,9 +232,9 @@ function fetchData(endpoint) {
       this.modifiedContainer.nativeElement,
       {
         value: this.modifiedContent,
-        language: 'javascript',
-        theme: 'vs',
-        readOnly: true,
+        language: this.currentLanguage, // Use the current language
+        theme: this.currentTheme,
+        readOnly: true, // Allow editing for direct paste
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         lineNumbers: 'on',
@@ -208,8 +253,8 @@ function fetchData(endpoint) {
       this.resultContainer.nativeElement,
       {
         value: this.resultContent,
-        language: 'javascript',
-        theme: 'vs',
+        language: this.currentLanguage, // Use the current language
+        theme: this.currentTheme,
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         lineNumbers: 'on',
@@ -219,6 +264,17 @@ function fetchData(endpoint) {
         lineNumbersMinChars: 3,
       }
     );
+
+    // Setup editor change events
+    this.originalEditor.onDidChangeModelContent(() => {
+      this.originalContent = this.originalEditor.getValue();
+      this.setupDiffView();
+    });
+
+    this.modifiedEditor.onDidChangeModelContent(() => {
+      this.modifiedContent = this.modifiedEditor.getValue();
+      this.setupDiffView();
+    });
 
     // Setup diff view
     this.setupDiffView();
@@ -517,6 +573,7 @@ function fetchData(endpoint) {
 
   // Actions that can be called from the UI
   public selectOriginalBlock(): void {
+    this.previousResultContent = this.resultEditor.getValue();
     if (
       this.differences.length === 0 ||
       this.currentDiffIndex >= this.differences.length
@@ -556,6 +613,7 @@ function fetchData(endpoint) {
   }
 
   public selectModifiedBlock(): void {
+    this.previousResultContent = this.resultEditor.getValue();
     if (
       this.differences.length === 0 ||
       this.currentDiffIndex >= this.differences.length
@@ -852,6 +910,7 @@ function fetchData(endpoint) {
    * Accepts all changes from the original document
    */
   public acceptAllOriginal(): void {
+    this.previousResultContent = this.resultEditor.getValue();
     // Check if there are any differences to resolve
     if (this.differences.length === 0) return;
 
@@ -907,6 +966,8 @@ function fetchData(endpoint) {
    * Accepts all changes from the modified document
    */
   public acceptAllModified(): void {
+    // Save current content before changes
+    this.previousResultContent = this.resultEditor.getValue();
     // Check if there are any differences to resolve
     if (this.differences.length === 0) return;
 
@@ -1146,5 +1207,94 @@ function fetchData(endpoint) {
   @HostListener('window:resize')
   onWindowResize(): void {
     this.refreshEditorLayouts();
+  }
+
+  /**
+   * Change the language for all editors
+   */
+  public changeLanguage(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.currentLanguage = select.value;
+
+    if (this.originalEditor && this.modifiedEditor && this.resultEditor) {
+      const originalModel = this.originalEditor.getModel();
+      const modifiedModel = this.modifiedEditor.getModel();
+      const resultModel = this.resultEditor.getModel();
+
+      monaco.editor.setModelLanguage(originalModel, this.currentLanguage);
+      monaco.editor.setModelLanguage(modifiedModel, this.currentLanguage);
+      monaco.editor.setModelLanguage(resultModel, this.currentLanguage);
+    }
+  }
+
+  /**
+   * Open the paste dialog
+   */
+  public openPasteDialog(target: 'original' | 'modified'): void {
+    this.pasteTarget = target;
+    this.pasteContent =
+      target === 'original'
+        ? this.originalEditor.getValue()
+        : this.modifiedEditor.getValue();
+    this.showPasteDialog = true;
+  }
+
+  /**
+   * Cancel the paste operation
+   */
+  public cancelPaste(): void {
+    this.showPasteDialog = false;
+    this.pasteContent = '';
+  }
+
+  /**
+   * Confirm and apply pasted code
+   */
+  public confirmPaste(): void {
+    if (this.pasteTarget === 'original') {
+      this.originalContent = this.pasteContent;
+      this.originalEditor.setValue(this.pasteContent);
+    } else {
+      this.modifiedContent = this.pasteContent;
+      this.modifiedEditor.setValue(this.pasteContent);
+
+      // Update result editor with modified content
+      this.resultContent = this.pasteContent;
+      this.resultEditor.setValue(this.pasteContent);
+    }
+
+    // Refresh diff view with new content
+    this.setupDiffView();
+
+    this.showPasteDialog = false;
+    this.pasteContent = '';
+  }
+  /**
+   * Updates the result editor with content from the modified editor
+   */
+  public updateResultFromModified(): void {
+    if (this.modifiedEditor) {
+      // Get current content from modified editor
+      const modifiedContent = this.modifiedEditor.getValue();
+      this.resultContent = modifiedContent;
+
+      // Update result editor
+      if (this.resultEditor) {
+        this.resultEditor.setValue(modifiedContent);
+      }
+
+      // Refresh diff view to update conflicts
+      this.setupDiffView();
+    }
+  }
+
+   // Add theme change method
+  public changeTheme(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.currentTheme = select.value;
+    
+    if (this.originalEditor && this.modifiedEditor && this.resultEditor) {
+      monaco.editor.setTheme(this.currentTheme);
+    }
   }
 }

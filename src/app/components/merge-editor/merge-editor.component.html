@@ -3,21 +3,57 @@
     <div class="editor-title">Original</div>
     <div class="editor-title">Modified</div>
   </div>
+
+  <div class="merge-controls top-controls">
+    <div style="display: flex; justify-content: space-between;">
+      <div class="language-selector">
+        <label for="language-select">Language:</label>
+        <select id="language-select" (change)="changeLanguage($event)">
+          <option *ngFor="let lang of supportedLanguages" [value]="lang.id">
+            {{ lang.name }}
+          </option>
+        </select>
+      </div>
   
+      <div class="theme-selector">
+        <label for="theme-select">Theme:</label>
+        <select id="theme-select" (change)="changeTheme($event)">
+          <option *ngFor="let theme of supportedThemes" [value]="theme.id">
+            {{ theme.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <!-- Replace paste buttons with direct editing -->
+    <div style="display: flex; justify-content: space-between; gap: 5px;">
+      <button (click)="openPasteDialog('original')" class="merge-btn">
+        <span class="merge-btn-icon">📋</span> Paste Original
+      </button>
+      <button (click)="openPasteDialog('modified')" class="merge-btn">
+        <span class="merge-btn-icon">📋</span> Paste Modified
+      </button>
+      <button (click)="updateResultFromModified()" class="merge-btn">
+        <span class="merge-btn-icon">↓</span> Update Result
+      </button>
+    </div>
+  </div>
+
   <div class="editors-container">
     <div #originalContainer class="editor-panel"></div>
     <div class="resize-handle horizontal-resize" #horizontalResizeHandle></div>
     <div #modifiedContainer class="editor-panel"></div>
   </div>
-  
+
   <div class="resize-handle vertical-resize" #verticalResizeHandle></div>
-  
+
   <div class="merge-controls">
     <div class="conflict-counter">
       <span class="conflict-icon">⚠️</span>
-      <span class="conflict-count">{{ pendingConflictsCount }} pending conflicts</span>
+      <span class="conflict-count"
+        >{{ pendingConflictsCount }} pending conflicts</span
+      >
     </div>
-    
+
     <button (click)="previousDifference()" class="merge-btn">
       <span class="merge-btn-icon">⬆</span> Previous Difference
     </button>
@@ -25,17 +61,45 @@
       <span class="merge-btn-icon">⬇</span> Next Difference
     </button>
     <div class="merge-actions">
-      <button (click)="selectOriginalBlock()" class="merge-btn">Accept Original Block</button>
-      <button (click)="selectModifiedBlock()" class="merge-btn">Accept Modified Block</button>
-      <button (click)="acceptAllOriginal()" class="merge-btn">Accept All Original</button>
-      <button (click)="acceptAllModified()" class="merge-btn">Accept All Modified</button>
+      <button (click)="selectOriginalBlock()" class="merge-btn">
+        Accept Original Block
+      </button>
+      <button (click)="selectModifiedBlock()" class="merge-btn">
+        Accept Modified Block
+      </button>
+      <button (click)="acceptAllOriginal()" class="merge-btn">
+        Accept All Original
+      </button>
+      <button (click)="acceptAllModified()" class="merge-btn">
+        Accept All Modified
+      </button>
     </div>
-    <button (click)="saveResult()" class="merge-btn primary">Save Result</button>
+    <button (click)="saveResult()" class="merge-btn primary">
+      Save Result
+    </button>
   </div>
-  
+
   <div class="result-header">
     <div class="editor-title">Resolved</div>
   </div>
-  
+
   <div #resultContainer class="result-panel"></div>
+</div>
+
+<!-- Code paste dialog -->
+<div class="paste-dialog" *ngIf="showPasteDialog">
+  <div class="paste-dialog-content">
+    <h3>
+      Paste {{ pasteTarget === "original" ? "Original" : "Modified" }} Code
+    </h3>
+    <textarea
+      [(ngModel)]="pasteContent"
+      rows="15"
+      placeholder="Paste your code here..."
+    ></textarea>
+    <div class="dialog-buttons">
+      <button class="merge-btn" (click)="cancelPaste()">Cancel</button>
+      <button class="merge-btn primary" (click)="confirmPaste()">Apply</button>
+    </div>
+  </div>
 </div>
