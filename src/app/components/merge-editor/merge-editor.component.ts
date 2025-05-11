@@ -333,19 +333,21 @@ function fetchData(endpoint) {
 
     // Set models for diff editor
     this.diffEditor.setModel({
-      original: this.originalEditor.getModel(),
-      modified: this.modifiedEditor.getModel(),
+      original: monaco.editor.createModel(this.originalContent, this.currentLanguage),
+      modified: monaco.editor.createModel(this.modifiedContent, this.currentLanguage),
     });
 
     // Compute differences
     setTimeout(() => {
+      // Force re-computation of differences
+      this.differences = [];
       this.computeDifferences();
       this.highlightDifferences();
       this.updatePendingConflictsCount();
 
       // Clean up the temporary container
       document.body.removeChild(diffContainer);
-    }, 500);
+    }, 800);
   }
 
   private computeDifferences(): void {
@@ -1281,7 +1283,7 @@ function fetchData(endpoint) {
       this.modifiedContent = this.pasteContent;
       this.initialModifiedContent = this.pasteContent; // Update initial state
       this.modifiedEditor.setValue(this.pasteContent);
-
+      
       // Update result editor with modified content
       this.resultContent = this.pasteContent;
       this.resultEditor.setValue(this.pasteContent);
@@ -1290,8 +1292,16 @@ function fetchData(endpoint) {
     // Clear resolved differences since content has changed
     this.resolvedDifferences.clear();
     
-    // Refresh diff view with new content
-    this.setupDiffView();
+    // Dispose of previous diff editor if it exists
+    if (this.diffEditor) {
+      this.diffEditor.dispose();
+    }
+    
+    // Add a longer delay to ensure Monaco has time to process
+    setTimeout(() => {
+      // Rebuild the diff view from scratch
+      this.setupDiffView();
+    }, 1000);
 
     this.showPasteDialog = false;
     this.pasteContent = '';
@@ -1355,5 +1365,21 @@ function fetchData(endpoint) {
         this.navigateToDiff(0);
       }
     }
+  }
+
+  /**
+   * Force recalculation of differences between original and modified content
+   */
+  public recalculateDifferences(): void {
+    // Dispose of previous diff editor if it exists
+    if (this.diffEditor) {
+      this.diffEditor.dispose();
+    }
+    
+    // Clear any previously resolved differences
+    this.resolvedDifferences.clear();
+    
+    // Recreate the diff view with a clean state
+    this.setupDiffView();
   }
 }
