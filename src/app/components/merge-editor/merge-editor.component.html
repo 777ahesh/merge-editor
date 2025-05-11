@@ -1,4 +1,19 @@
-<div class="merge-editor-container">
+<div class="landing-page" *ngIf="showLandingPage" (click)="openEditor()">
+  <div class="landing-content">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <div class="merge-icon-part left"></div>
+        <div class="merge-icon-part right"></div>
+        <div class="merge-icon-part bottom"></div>
+      </div>
+    </div>
+    <h1 class="landing-title">Merge Editor</h1>
+    <p class="landing-subtitle">Resolve conflicts with ease</p>
+    <div class="landing-cta">Click anywhere to begin</div>
+  </div>
+</div>
+
+<div class="merge-editor-container" [class.hidden]="showLandingPage">
   <div class="editors-header">
     <div class="editor-title">Original</div>
     <div class="editor-title">Modified</div>

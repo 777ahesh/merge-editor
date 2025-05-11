@@ -122,6 +122,20 @@ function fetchData(endpoint) {
   private initialOriginalContent: string = '';
   private initialModifiedContent: string = '';
 
+  // Add these properties to the top of the class
+  public showLandingPage = true;
+
+  // Add this method to the class
+  public openEditor(): void {
+    this.showLandingPage = false;
+    
+    // Since we're revealing the editor after it's already rendered but hidden,
+    // we need to refresh the layout of Monaco editors
+    setTimeout(() => {
+      this.refreshEditorLayouts();
+    }, 100);
+  }
+
   // Add this method to revert changes
   public revertLastChange(): void {
     if (this.previousResultContent) {
