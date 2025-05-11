@@ -49,9 +49,7 @@
   <div class="merge-controls">
     <div class="conflict-counter">
       <span class="conflict-icon">⚠️</span>
-      <span class="conflict-count"
-        >{{ pendingConflictsCount }} pending conflicts</span
-      >
+      <span class="conflict-count">{{ pendingConflictsCount }} pending conflicts</span>
     </div>
 
     <button (click)="previousDifference()" class="merge-btn">
@@ -60,6 +58,12 @@
     <button (click)="nextDifference()" class="merge-btn">
       <span class="merge-btn-icon">⬇</span> Next Difference
     </button>
+    <button (click)="resetDifferences()" class="merge-btn">
+      <span class="merge-btn-icon">🔄</span> Reset Differences
+    </button>
+    <!-- <button (click)="revertLastChange()" class="merge-btn">
+      <span class="merge-btn-icon">↩️</span> Revert Last Change
+    </button> -->
     <div class="merge-actions">
       <button (click)="selectOriginalBlock()" class="merge-btn">
         Accept Original Block
@@ -74,9 +78,7 @@
         Accept All Modified
       </button>
     </div>
-    <button (click)="saveResult()" class="merge-btn primary">
-      Save Result
-    </button>
+    <button (click)="saveResult()" class="merge-btn primary">Save Result</button>
   </div>
 
   <div class="result-header">

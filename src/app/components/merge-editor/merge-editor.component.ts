@@ -118,6 +118,10 @@ function fetchData(endpoint) {
   // Add this property to store previous content
   private previousResultContent: string = '';
 
+  // Add these properties to store initial state
+  private initialOriginalContent: string = '';
+  private initialModifiedContent: string = '';
+
   // Add this method to revert changes
   public revertLastChange(): void {
     if (this.previousResultContent) {
@@ -264,6 +268,10 @@ function fetchData(endpoint) {
         lineNumbersMinChars: 3,
       }
     );
+
+    // Store initial content for reset functionality
+    this.initialOriginalContent = this.originalContent;
+    this.initialModifiedContent = this.modifiedContent;
 
     // Setup editor change events
     this.originalEditor.onDidChangeModelContent(() => {
@@ -1253,9 +1261,11 @@ function fetchData(endpoint) {
   public confirmPaste(): void {
     if (this.pasteTarget === 'original') {
       this.originalContent = this.pasteContent;
+      this.initialOriginalContent = this.pasteContent; // Update initial state
       this.originalEditor.setValue(this.pasteContent);
     } else {
       this.modifiedContent = this.pasteContent;
+      this.initialModifiedContent = this.pasteContent; // Update initial state
       this.modifiedEditor.setValue(this.pasteContent);
 
       // Update result editor with modified content
@@ -1263,6 +1273,9 @@ function fetchData(endpoint) {
       this.resultEditor.setValue(this.pasteContent);
     }
 
+    // Clear resolved differences since content has changed
+    this.resolvedDifferences.clear();
+    
     // Refresh diff view with new content
     this.setupDiffView();
 
@@ -1295,6 +1308,38 @@ function fetchData(endpoint) {
     
     if (this.originalEditor && this.modifiedEditor && this.resultEditor) {
       monaco.editor.setTheme(this.currentTheme);
+    }
+  }
+
+  /**
+   * Resets all differences to their initial state
+   */
+  public resetDifferences(): void {
+    // Confirm with user before resetting
+    if (confirm('Reset all differences? This will clear any changes you have made.')) {
+      // Clear resolved differences
+      this.resolvedDifferences.clear();
+      
+      // Reset original and modified content to initial state if needed
+      // (Only needed if you're allowing editing of these panels)
+      this.originalEditor.setValue(this.initialOriginalContent);
+      this.modifiedEditor.setValue(this.initialModifiedContent);
+      
+      // Reset result content to show differences again
+      this.resultEditor.setValue(this.initialModifiedContent);
+      this.resultContent = this.initialModifiedContent;
+      
+      // Recompute differences
+      this.setupDiffView();
+      
+      // Update UI
+      this.updatePendingConflictsCount();
+      this.highlightDifferences();
+      
+      // Navigate to the first difference
+      if (this.differences.length > 0) {
+        this.navigateToDiff(0);
+      }
     }
   }
 }
